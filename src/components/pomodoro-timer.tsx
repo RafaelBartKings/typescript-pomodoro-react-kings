@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useInterval } from "../hooks/use-interval";
 import { Button } from "./button";
 import { Timer } from "./timer";
@@ -33,31 +33,47 @@ export function PomodoroTimer(props: Props): JSX.Element {
    useInterval(
       () => {
          setMainTime(mainTime - 1);
+         if (working) setFullWorkingTime(fullWorkingTime + 1);
       },
       timeCounting ? 1000 : null
    );
 
-   const configWork = () => {
+   const configWork = useCallback(() => {
       setTimeCounting(true);
       setWorking(true);
       setResting(false);
       setMainTime(props.pomodoroTime);
       audioStartWorking.play();
-   };
+   }, [
+      setTimeCounting,
+      setWorking,
+      setResting,
+      setMainTime,
+      props.pomodoroTime,
+   ]);
 
-   const configRest = (long: boolean) => {
-      setTimeCounting(true);
-      setWorking(false);
-      setResting(true);
+   const configRest = useCallback(
+      (long: boolean) => {
+         setTimeCounting(true);
+         setWorking(false);
+         setResting(true);
 
-      if (long) {
-         setMainTime(props.longRestTime);
-      } else {
-         setMainTime(props.shortRestTime);
-      }
+         if (long) {
+            setMainTime(props.longRestTime);
+         } else {
+            setMainTime(props.shortRestTime);
+         }
 
-      audioStopWorking.play();
-   };
+         audioStopWorking.play();
+      },
+      [
+         setTimeCounting,
+         setWorking,
+         setResting,
+         props.longRestTime,
+         props.shortRestTime,
+      ]
+   );
 
    useEffect(() => {
       if (working) document.body.classList.add("working");
@@ -91,7 +107,7 @@ export function PomodoroTimer(props: Props): JSX.Element {
 
    return (
       <div className="pomodoro">
-         <h2>You are → working</h2>
+         <h2>You are → {working ? "WORKING" : "RESTING"}</h2>
          <Timer mainTime={mainTime} />
 
          <div className="controls">
